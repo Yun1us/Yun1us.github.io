@@ -17,7 +17,7 @@
 <li>Enabled simultaneous control over multiple mechanical objectives, including linear and nonlinear responses.</li>
 <li>Validated the approach through experimental tests on 3D-printed shell structures.</li>
 </ul>
-</article><aside class="project-aside" aria-label="Project metadata"><dl><dt>Status</dt><dd>Active</dd><dt>Date</dt><dd>July 10, 2026</dd><dt>Focus</dt><dd>generative modeling · diffusion transformers · metamaterials</dd></dl><section class="reference-card" aria-labelledby="source-attribution-title"><p class="reference-kicker">Inspiration</p><h2 id="source-attribution-title">Source credit</h2><p>This project takes inspiration from this open-source diffusion metamaterials work.</p><a href="https://github.com/li-zhengz/DiffusionMetamaterials" target="_blank" rel="noreferrer">li-zhengz/DiffusionMetamaterials</a></section></aside></div></main><footer class="site-footer"><div class="container footer-shell"><p>© 2026 Inoussa Adouba.</p><div class="footer-links"><a href="/skyjepa-bmw-pitch-de/" target="_blank" rel="noreferrer">SkyJEPA pitch</a><a href="/downloads/skyjepa-bmw-pitch-de.zip" download>Download</a><a href="https://github.com/Yun1us" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.linkedin.com/in/inoussa-adouba/" target="_blank" rel="noreferrer">LinkedIn</a><a href="mailto:inoussaadouba@gmail.com">Email</a></div></div></footer><script>
+</article><aside class="project-aside" aria-label="Project metadata"><dl><dt>Status</dt><dd>Active</dd><dt>Date</dt><dd>July 10, 2026</dd><dt>Focus</dt><dd>generative modeling · diffusion transformers · metamaterials</dd></dl><section class="reference-card" aria-labelledby="source-attribution-title"><p class="reference-kicker">Inspiration</p><h2 id="source-attribution-title">Source credit</h2><p>This project takes inspiration from this open-source diffusion metamaterials work.</p><a href="https://github.com/li-zhengz/DiffusionMetamaterials" target="_blank" rel="noreferrer">li-zhengz/DiffusionMetamaterials</a></section></aside></div></main><footer class="site-footer"><div class="container footer-shell"><p>© 2026 Inoussa Adouba.</p><div class="footer-links"><a data-skyjepa-protected href="/skyjepa-bmw-pitch-de/" target="_blank" rel="noreferrer">SkyJEPA pitch</a><a data-skyjepa-protected href="/downloads/skyjepa-bmw-pitch-de.zip" download>Download</a><a href="https://github.com/Yun1us" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.linkedin.com/in/inoussa-adouba/" target="_blank" rel="noreferrer">LinkedIn</a><a href="mailto:inoussaadouba@gmail.com">Email</a></div></div></footer><script>
       const revealItems = document.querySelectorAll('[data-reveal]');
       if ('IntersectionObserver' in window && document.documentElement.classList.contains('motion-ready')) {
         const observer = new IntersectionObserver((entries) => {
@@ -32,4 +32,14 @@
       } else {
         revealItems.forEach((item) => item.classList.add('is-visible'));
       }
+
+      document.querySelectorAll('[data-skyjepa-protected]').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          const password = window.prompt('Password required:');
+          if (password !== 'Reinforce321') {
+            event.preventDefault();
+            if (password !== null) window.alert('Incorrect password.');
+          }
+        });
+      });
     </script></body></html>

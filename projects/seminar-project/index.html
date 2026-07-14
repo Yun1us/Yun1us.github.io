@@ -22,7 +22,7 @@
 <li>Discussed the paper’s reported zero-shot transfer behavior and implications for multi-agent coordination.</li>
 <li>Prepared presentation material and a concise seminar handout for the technical discussion.</li>
 </ul>
-</article><aside class="project-aside" aria-label="Project metadata"><dl><dt>Status</dt><dd>Completed</dd><dt>Date</dt><dd>June 19, 2026</dd><dt>Focus</dt><dd>Multi-Agent Reinforcement Learning · Role Decomposition · Research Presentation</dd></dl><section class="slides-card" aria-labelledby="slides-title"><p class="slides-kicker">Presentation</p><h2 id="slides-title">RODE seminar presentation</h2><p>Slides from my seminar presentation on the RODE paper.</p><div class="slides-frame"><iframe src="/presentations/rode-seminar-presentation.pdf#toolbar=1&amp;navpanes=0&amp;view=FitH" title="RODE seminar presentation" loading="lazy"></iframe></div><a class="button slides-button" href="/presentations/rode-seminar-presentation.pdf" target="_blank" rel="noreferrer">Open full deck</a></section></aside></div></main><footer class="site-footer"><div class="container footer-shell"><p>© 2026 Inoussa Adouba.</p><div class="footer-links"><a href="/skyjepa-bmw-pitch-de/" target="_blank" rel="noreferrer">SkyJEPA pitch</a><a href="/downloads/skyjepa-bmw-pitch-de.zip" download>Download</a><a href="https://github.com/Yun1us" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.linkedin.com/in/inoussa-adouba/" target="_blank" rel="noreferrer">LinkedIn</a><a href="mailto:inoussaadouba@gmail.com">Email</a></div></div></footer><script>
+</article><aside class="project-aside" aria-label="Project metadata"><dl><dt>Status</dt><dd>Completed</dd><dt>Date</dt><dd>June 19, 2026</dd><dt>Focus</dt><dd>Multi-Agent Reinforcement Learning · Role Decomposition · Research Presentation</dd></dl><section class="slides-card" aria-labelledby="slides-title"><p class="slides-kicker">Presentation</p><h2 id="slides-title">RODE seminar presentation</h2><p>Slides from my seminar presentation on the RODE paper.</p><div class="slides-frame"><iframe src="/presentations/rode-seminar-presentation.pdf#toolbar=1&amp;navpanes=0&amp;view=FitH" title="RODE seminar presentation" loading="lazy"></iframe></div><a class="button slides-button" href="/presentations/rode-seminar-presentation.pdf" target="_blank" rel="noreferrer">Open full deck</a></section></aside></div></main><footer class="site-footer"><div class="container footer-shell"><p>© 2026 Inoussa Adouba.</p><div class="footer-links"><a data-skyjepa-protected href="/skyjepa-bmw-pitch-de/" target="_blank" rel="noreferrer">SkyJEPA pitch</a><a data-skyjepa-protected href="/downloads/skyjepa-bmw-pitch-de.zip" download>Download</a><a href="https://github.com/Yun1us" target="_blank" rel="noreferrer">GitHub</a><a href="https://www.linkedin.com/in/inoussa-adouba/" target="_blank" rel="noreferrer">LinkedIn</a><a href="mailto:inoussaadouba@gmail.com">Email</a></div></div></footer><script>
       const revealItems = document.querySelectorAll('[data-reveal]');
       if ('IntersectionObserver' in window && document.documentElement.classList.contains('motion-ready')) {
         const observer = new IntersectionObserver((entries) => {
@@ -37,4 +37,14 @@
       } else {
         revealItems.forEach((item) => item.classList.add('is-visible'));
       }
+
+      document.querySelectorAll('[data-skyjepa-protected]').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          const password = window.prompt('Password required:');
+          if (password !== 'Reinforce321') {
+            event.preventDefault();
+            if (password !== null) window.alert('Incorrect password.');
+          }
+        });
+      });
     </script></body></html>
