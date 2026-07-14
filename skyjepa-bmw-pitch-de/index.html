@@ -1,0 +1,1552 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bachelorarbeitsidee: Reimplementierung von SkyJEPA für lernbasierte Drohnensteuerung.">
+  <title>SkyJEPA – Idee für meine Bachelorarbeit</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f6f7fb;
+      --muted: #aeb5c2;
+      --paper: #090b10;
+      --panel: #10141c;
+      --line: rgba(255, 255, 255, 0.16);
+      --blue: #2f7df6;
+      --blue-soft: #91baff;
+      --mint: #77e6c3;
+      --amber: #f2b56b;
+      --danger: #ff7d7d;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #030407;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, a { font: inherit; }
+    a { color: inherit; }
+
+    .app {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .deck {
+      position: relative;
+      width: min(100vw, 177.7778vh);
+      height: min(100vh, 56.25vw);
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 0 80px rgba(0, 0, 0, 0.55);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 3.2vmin;
+      padding: 5.8vmin 7.2vmin 4.6vmin;
+      background:
+        radial-gradient(circle at 88% 12%, rgba(47, 125, 246, 0.10), transparent 28%),
+        linear-gradient(135deg, #0b0e14 0%, #080a0f 100%);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(3%);
+      transition: opacity 280ms ease, transform 320ms ease, visibility 280ms;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+      z-index: 2;
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 6.25% 11.111%;
+      mask-image: linear-gradient(to bottom, black, transparent 88%);
+    }
+
+    .slide > * { position: relative; z-index: 1; }
+
+    .slide-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 3vmin;
+    }
+
+    .eyebrow {
+      margin: 0 0 1.4vmin;
+      color: var(--blue-soft);
+      font-size: 1.65vmin;
+      font-weight: 760;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 2.3vmin;
+      max-width: 13ch;
+      font-size: 8.8vmin;
+      line-height: 0.95;
+      letter-spacing: -0.055em;
+    }
+
+    h2 {
+      margin-bottom: 0;
+      max-width: 19ch;
+      font-size: 5.8vmin;
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+    }
+
+    h3 {
+      margin-bottom: 1.2vmin;
+      font-size: 2.35vmin;
+      line-height: 1.13;
+    }
+
+    p, li {
+      font-size: 2.18vmin;
+      line-height: 1.43;
+    }
+
+    strong { color: #fff; }
+    .muted { color: var(--muted); }
+    .blue { color: var(--blue-soft); }
+    .mint { color: var(--mint); }
+    .amber { color: var(--amber); }
+
+    .slide-number {
+      min-width: 7vmin;
+      flex: 0 0 7vmin;
+      padding-top: 0.5vmin;
+      border-top: 2px solid var(--blue);
+      color: var(--muted);
+      font-size: 1.55vmin;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .slide-body {
+      min-height: 0;
+    }
+
+    .slide-footer {
+      display: flex;
+      visibility: hidden;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2vmin;
+      color: #89919f;
+      font-size: 1.35vmin;
+      line-height: 1.3;
+    }
+
+    .source-link {
+      text-underline-offset: 0.25em;
+      text-decoration-color: rgba(255,255,255,0.28);
+    }
+
+    .source-link:hover { color: #fff; }
+
+    .title-slide {
+      grid-template-rows: 1fr auto;
+      padding: 6.6vmin 7.2vmin 5.3vmin;
+      background: #05070a;
+    }
+
+    .title-slide::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(2,4,8,0.97) 0%, rgba(2,4,8,0.84) 40%, rgba(2,4,8,0.25) 72%, rgba(2,4,8,0.46) 100%),
+        linear-gradient(0deg, rgba(2,4,8,0.92), transparent 48%);
+      z-index: 0;
+    }
+
+    .title-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(0.85) contrast(1.08);
+      z-index: 0;
+    }
+
+    .title-copy {
+      align-self: end;
+      max-width: 72%;
+      z-index: 2;
+    }
+
+    .title-subtitle {
+      max-width: 35ch;
+      margin: 0;
+      color: #d4d9e2;
+      font-size: 2.65vmin;
+      line-height: 1.38;
+    }
+
+    .title-meta {
+      z-index: 2;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 3vmin;
+      padding-top: 2.4vmin;
+      border-top: 1px solid rgba(255,255,255,0.34);
+      color: #c4cad4;
+      font-size: 1.55vmin;
+      line-height: 1.35;
+    }
+
+    .thesis-stance {
+      max-width: 34ch;
+      color: #fff;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .profile-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1.22fr 0.78fr;
+      align-items: stretch;
+      gap: 5.5vmin;
+    }
+
+    .profile-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .profile-lines {
+      margin: 1.2vmin 0 2.3vmin;
+      border-top: 1px solid var(--line);
+    }
+
+    .profile-line {
+      display: grid;
+      grid-template-columns: 14.5vmin 1fr;
+      align-items: baseline;
+      gap: 1.8vmin;
+      padding: 1.15vmin 0;
+      border-bottom: 1px solid var(--line);
+      color: #d9dee7;
+      font-size: 2.05vmin;
+      line-height: 1.3;
+    }
+
+    .profile-line b {
+      color: var(--blue-soft);
+      font-size: 1.55vmin;
+      letter-spacing: 0.02em;
+    }
+
+    .profile-thesis {
+      max-width: 46ch;
+      margin: 0;
+      color: var(--muted);
+      font-size: 2vmin;
+    }
+
+    .portrait-wrap {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      border-radius: 0.6vmin;
+      background: #171a20;
+    }
+
+    .portrait-wrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: inset 0 -16vmin 18vmin rgba(2,4,8,0.55);
+      pointer-events: none;
+    }
+
+    .portrait-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 42%;
+    }
+
+    .portrait-label {
+      position: absolute;
+      left: 2.4vmin;
+      right: 2.4vmin;
+      bottom: 2.2vmin;
+      z-index: 1;
+      font-size: 1.55vmin;
+      line-height: 1.45;
+    }
+
+    .problem-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 0.76fr 1.24fr;
+      align-items: center;
+      gap: 5.2vmin;
+    }
+
+    .definition {
+      padding-left: 2.2vmin;
+      border-left: 3px solid var(--blue);
+    }
+
+    .definition p { margin-bottom: 1.8vmin; }
+
+    .not-video {
+      color: var(--muted);
+      font-size: 1.7vmin;
+    }
+
+    .chart-frame {
+      padding: 1.3vmin;
+      background: #f7f7f5;
+      border-radius: 0.5vmin;
+      box-shadow: 0 2vmin 5vmin rgba(0,0,0,0.3);
+    }
+
+    .chart-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .chart-caption {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2vmin;
+      margin-top: 1.25vmin;
+      color: var(--muted);
+      font-size: 1.52vmin;
+    }
+
+    .paper-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 2.2vmin;
+    }
+
+    .paper-facts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .paper-fact {
+      padding: 1.2vmin 1.7vmin 1.3vmin 0;
+      color: #d8dde5;
+      font-size: 1.9vmin;
+      line-height: 1.35;
+    }
+
+    .paper-fact + .paper-fact {
+      padding-left: 1.7vmin;
+      border-left: 1px solid var(--line);
+    }
+
+    .paper-fact b {
+      display: block;
+      margin-bottom: 0.25vmin;
+      color: var(--blue-soft);
+      font-size: 1.35vmin;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .overview-frame {
+      align-self: center;
+      padding: 1.8vmin;
+      background: #f6f5f2;
+      border-radius: 0.55vmin;
+      box-shadow: 0 2.5vmin 5vmin rgba(0,0,0,0.28);
+    }
+
+    .overview-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .evidence-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 0.92fr;
+      gap: 5vmin;
+      align-items: stretch;
+    }
+
+    .evidence-stats {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .big-stat {
+      display: grid;
+      grid-template-columns: 13.5vmin 1fr;
+      gap: 1.8vmin;
+      align-items: center;
+      position: relative;
+      padding: 1.55vmin 0 1.55vmin 1.6vmin;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .big-stat:first-child { border-top: 1px solid var(--line); }
+
+    .big-stat::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 1.25vmin;
+      bottom: 1.25vmin;
+      width: 2px;
+      background: var(--blue);
+    }
+
+    .big-stat strong {
+      color: var(--blue-soft);
+      font-size: 3.45vmin;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+    }
+
+    .big-stat span {
+      color: #d7dce5;
+      font-size: 1.95vmin;
+      line-height: 1.35;
+    }
+
+    .evidence-caveat {
+      margin-top: 1.5vmin;
+      color: var(--amber);
+      font-size: 1.82vmin;
+      line-height: 1.45;
+    }
+
+    .video-column {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0.5vmin;
+      background: #11151c;
+    }
+
+    .video-column video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .mppi-column {
+      background: #05070a;
+    }
+
+    .mppi-column video {
+      object-fit: contain;
+    }
+
+    .video-column::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 -14vmin 18vmin rgba(0,0,0,0.58);
+      pointer-events: none;
+    }
+
+    .video-label {
+      position: absolute;
+      left: 2.2vmin;
+      right: 2.2vmin;
+      bottom: 2vmin;
+      z-index: 1;
+      font-size: 1.45vmin;
+      line-height: 1.35;
+    }
+
+    .rq-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1.18fr 0.82fr;
+      gap: 5vmin;
+      align-items: center;
+    }
+
+    .rq-list { counter-reset: rq; }
+
+    .rq {
+      counter-increment: rq;
+      display: grid;
+      grid-template-columns: 4.6vmin 1fr;
+      gap: 1.6vmin;
+      padding: 1.25vmin 0;
+      border-bottom: 1px solid var(--line);
+      color: #dce1e9;
+      font-size: 2.02vmin;
+      line-height: 1.38;
+    }
+
+    .rq:first-child { border-top: 1px solid var(--line); }
+
+    .rq::before {
+      content: "0" counter(rq);
+      color: var(--blue-soft);
+      font-size: 1.35vmin;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .deliverable {
+      padding: 2.4vmin 2.6vmin;
+      border-left: 3px solid var(--mint);
+      background: rgba(119,230,195,0.055);
+    }
+
+    .deliverable h3 { color: var(--mint); }
+    .deliverable p { margin: 0; font-size: 1.92vmin; }
+    .deliverable .out-of-scope { margin-top: 1.9vmin; color: var(--muted); }
+
+    .scope-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+
+    .scope-columns {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      align-content: center;
+      gap: 2.4vmin;
+    }
+
+    .scope-column {
+      padding: 1.8vmin 2vmin 1.5vmin;
+      border-top: 4px solid var(--blue);
+      background: rgba(255,255,255,0.032);
+    }
+
+    .scope-column.should { border-top-color: var(--mint); }
+    .scope-column.stretch { border-top-color: var(--amber); }
+
+    .scope-column small {
+      display: block;
+      margin-bottom: 0.65vmin;
+      color: var(--muted);
+      font-size: 1.25vmin;
+      font-weight: 750;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .scope-column h3 { font-size: 2.45vmin; }
+
+    .scope-column ul {
+      margin: 1.2vmin 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .scope-column li {
+      position: relative;
+      margin: 0 0 0.9vmin;
+      padding-left: 1.6vmin;
+      color: #cfd5de;
+      font-size: 1.92vmin;
+      line-height: 1.3;
+    }
+
+    .scope-column li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.62em;
+      width: 0.55vmin;
+      height: 0.55vmin;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .gate-line {
+      display: grid;
+      grid-template-columns: auto 1fr auto 1fr auto;
+      align-items: center;
+      gap: 1.2vmin;
+      color: var(--muted);
+      font-size: 1.35vmin;
+    }
+
+    .gate {
+      color: #fff;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .gate-segment { height: 1px; background: var(--line); }
+
+    .plan-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1.16fr 0.84fr;
+      gap: 5vmin;
+      align-items: center;
+    }
+
+    .phases { counter-reset: phase; }
+
+    .phase {
+      counter-increment: phase;
+      display: grid;
+      grid-template-columns: 4.4vmin 15.5vmin 1fr;
+      gap: 1.4vmin;
+      align-items: baseline;
+      padding: 1.05vmin 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .phase:first-child { border-top: 1px solid var(--line); }
+
+    .phase::before {
+      content: "0" counter(phase);
+      color: var(--blue-soft);
+      font-size: 1.35vmin;
+      font-weight: 800;
+    }
+
+    .phase strong { font-size: 1.92vmin; }
+    .phase span { color: var(--muted); font-size: 1.78vmin; line-height: 1.35; }
+
+    .success-block {
+      padding: 2.3vmin 2.5vmin;
+      border-left: 3px solid var(--mint);
+      background: rgba(119,230,195,0.05);
+    }
+
+    .success-block h3 { color: var(--mint); }
+
+    .success-block ul {
+      margin: 1.2vmin 0 0;
+      padding-left: 1.5vmin;
+    }
+
+    .success-block li {
+      margin-bottom: 0.8vmin;
+      color: #d4dae3;
+      font-size: 1.83vmin;
+      line-height: 1.3;
+    }
+
+    .support-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5.5vmin;
+      align-content: center;
+      align-items: start;
+    }
+
+    .value-list, .support-list {
+      border-top: 1px solid var(--line);
+    }
+
+    .value-item, .support-item {
+      display: grid;
+      grid-template-columns: 3.6vmin 1fr;
+      gap: 1.4vmin;
+      padding: 1.25vmin 0;
+      border-bottom: 1px solid var(--line);
+      color: #d7dce5;
+      font-size: 1.92vmin;
+      line-height: 1.35;
+    }
+
+    .value-item b { color: var(--mint); }
+    .support-item b { color: var(--blue-soft); }
+
+    .decisions-layout {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 2.5vmin;
+    }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 4vmin;
+      align-content: center;
+    }
+
+    .decision {
+      display: grid;
+      grid-template-columns: 4.6vmin 1fr;
+      gap: 1.4vmin;
+      padding: 1.25vmin 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .decision:nth-child(1), .decision:nth-child(2) { border-top: 1px solid var(--line); }
+
+    .decision .num {
+      color: var(--blue-soft);
+      font-size: 1.65vmin;
+      font-weight: 800;
+    }
+
+    .decision h3 { margin-bottom: 0.4vmin; font-size: 2vmin; }
+    .decision p { margin: 0; color: var(--muted); font-size: 1.8vmin; line-height: 1.35; }
+
+    .recommendation {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 3vmin;
+      padding: 1.7vmin 2vmin;
+      border-left: 4px solid var(--mint);
+      background: rgba(119,230,195,0.06);
+    }
+
+    .recommendation strong { font-size: 2.05vmin; }
+    .recommendation span { max-width: 47%; color: var(--muted); font-size: 1.75vmin; line-height: 1.35; text-align: right; }
+
+    .contact-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5vmin;
+      align-items: center;
+    }
+
+    .contact-item {
+      display: grid;
+      grid-template-columns: 22vmin 1fr;
+      gap: 2.6vmin;
+      align-items: center;
+    }
+
+    .contact-item + .contact-item {
+      padding-left: 5vmin;
+      border-left: 1px solid var(--line);
+    }
+
+    .qr-placeholder {
+      width: 22vmin;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 2px dashed rgba(145,186,255,0.48);
+      color: var(--muted);
+      font-size: 1.55vmin;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .qr-image {
+      width: 22vmin;
+      aspect-ratio: 1;
+      display: block;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    .contact-copy h3 {
+      margin-bottom: 0.8vmin;
+      color: #fff;
+      font-size: 3vmin;
+    }
+
+    .contact-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.8vmin;
+    }
+
+    .appendix-label {
+      align-self: flex-start;
+      padding: 0.7vmin 1vmin;
+      border: 1px solid rgba(145,186,255,0.48);
+      color: var(--blue-soft);
+      font-size: 1.25vmin;
+      font-weight: 760;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .glossary-grid {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.2vmin 4vmin;
+      align-content: center;
+    }
+
+    .term {
+      padding: 1.5vmin 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .term h3 { color: var(--blue-soft); font-size: 2.25vmin; }
+    .term p { margin: 0; color: #d0d6df; font-size: 1.88vmin; line-height: 1.42; }
+
+    .spec-layout {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5vmin;
+      align-items: center;
+    }
+
+    .spec-group h3 {
+      margin-bottom: 1vmin;
+      color: var(--mint);
+      font-size: 1.65vmin;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .spec-table { border-top: 1px solid var(--line); }
+
+    .spec-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2vmin;
+      padding: 0.85vmin 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 1.82vmin;
+    }
+
+    .spec-row span:first-child { color: var(--muted); }
+    .spec-row span:last-child { color: #fff; font-weight: 680; text-align: right; }
+
+    .evidence-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1.72vmin;
+    }
+
+    .evidence-table th,
+    .evidence-table td {
+      padding: 1vmin 1.2vmin;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .evidence-table th {
+      color: var(--blue-soft);
+      font-size: 1.42vmin;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .evidence-table td { color: #d4dae2; line-height: 1.36; }
+    .evidence-table td:first-child { color: #fff; font-weight: 720; }
+
+    .speaker-note { display: none; }
+
+    .controls {
+      position: fixed;
+      right: 1.2rem;
+      bottom: 1.1rem;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.38rem;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      background: rgba(7,9,13,0.78);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+
+    .controls:hover, .controls:focus-within { opacity: 1; }
+
+    .control-button {
+      width: 2.25rem;
+      height: 2.25rem;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #dce1e9;
+      cursor: pointer;
+    }
+
+    .control-button:hover { background: rgba(255,255,255,0.10); color: #fff; }
+
+    .counter {
+      min-width: 3.8rem;
+      color: #aeb5c2;
+      font-size: 0.78rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-track {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: var(--blue);
+      transition: width 220ms ease;
+    }
+
+    .notes-panel {
+      position: fixed;
+      left: 50%;
+      bottom: 1.1rem;
+      z-index: 25;
+      width: min(54rem, calc(100vw - 12rem));
+      max-height: 32vh;
+      overflow: auto;
+      padding: 1rem 1.2rem;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 0.8rem;
+      background: rgba(5,7,11,0.94);
+      box-shadow: 0 1rem 4rem rgba(0,0,0,0.5);
+      backdrop-filter: blur(16px);
+      transform: translate(-50%, calc(100% + 3rem));
+      opacity: 0;
+      visibility: hidden;
+      transition: transform 220ms ease, opacity 220ms ease, visibility 220ms;
+    }
+
+    body.notes-open .notes-panel {
+      transform: translate(-50%, 0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .notes-panel h2 {
+      margin: 0 0 0.55rem;
+      color: var(--blue-soft);
+      font-size: 0.78rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .notes-content p,
+    .notes-content li {
+      margin: 0 0 0.55rem;
+      color: #d8dde5;
+      font-size: 0.95rem;
+      line-height: 1.48;
+    }
+
+    .notes-content ul { margin: 0; padding-left: 1.2rem; }
+
+    .shortcut-hint {
+      position: fixed;
+      left: 1rem;
+      bottom: 0.9rem;
+      z-index: 20;
+      color: rgba(255,255,255,0.36);
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
+      transition: opacity 300ms ease;
+    }
+
+    body.has-moved .shortcut-hint { opacity: 0; }
+
+    @media (max-width: 760px) {
+      .controls { right: 0.55rem; bottom: 0.6rem; opacity: 0.75; }
+      .shortcut-hint { display: none; }
+      .notes-panel { width: calc(100vw - 1rem); max-height: 40vh; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+
+    @media print {
+      html, body { width: auto; height: auto; overflow: visible; background: #fff; }
+      .app, .deck { display: block; width: auto; height: auto; overflow: visible; box-shadow: none; }
+      .slide {
+        position: relative;
+        width: 13.333in;
+        height: 7.5in;
+        page-break-after: always;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+      }
+      .controls, .progress-track, .notes-panel, .shortcut-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="deck" aria-live="polite">
+      <section class="slide title-slide active" aria-label="Titelfolie">
+        <video class="title-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+          <source src="assets/drone-flight.mp4" type="video/mp4">
+        </video>
+        <div class="title-copy">
+          <p class="eyebrow">Bachelorarbeit</p>
+          <h1>SkyJEPA</h1>
+          <p class="title-subtitle">Reimplementierung eines lernbasierten Modells für die Drohnensteuerung.</p>
+        </div>
+        <div class="title-meta">
+          <div><strong>Inoussa Adouba</strong><br>B.Sc. Artificial Intelligence · BMW Group</div>
+        </div>
+        <aside class="speaker-note">
+          <p><strong>Einstieg:</strong> „Ich möchte heute SkyJEPA und meine Idee für eine mögliche Bachelorarbeit vorstellen.“</p>
+          <p>Die genaue Datenbasis, Simulationsumgebung und der spätere Umfang sind noch nicht festgelegt und sollen erst gemeinsam eingeordnet werden.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Kurzvorstellung Inoussa">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">01</p>
+            <h2>Kurz zu mir</h2>
+          </div>
+          <span class="slide-number">02 / 14</span>
+        </header>
+        <div class="slide-body profile-layout">
+          <div class="profile-copy">
+            <div class="profile-lines">
+              <div class="profile-line"><b>Studium</b><span>B.Sc. Artificial Intelligence · Abschluss voraussichtlich 2027</span></div>
+              <div class="profile-line"><b>Schwerpunkte</b><span>Machine Learning, Deep Learning, NLP und Computer Vision</span></div>
+              <div class="profile-line"><b>Effiziente KI</b><span>Quantisierung, Pruning und ressourcenschonende Inferenz</span></div>
+              <div class="profile-line"><b>Praxis</b><span>BMW AI Operations &amp; Strategy; erste Robotikprojekte mit Simulation, ROS und VR</span></div>
+            </div>
+          </div>
+          <figure class="portrait-wrap">
+            <img src="assets/inoussa.webp" alt="Portrait of Inoussa Adouba">
+            <figcaption class="portrait-label"><strong>Inoussa Adouba</strong><br><span class="muted">B.Sc. Artificial Intelligence · expected 2027</span></figcaption>
+          </figure>
+        </div>
+        <footer class="slide-footer">
+          <span>Persönlicher Hintergrund</span>
+        </footer>
+        <aside class="speaker-note">
+          <p>Diese Folie neutral halten, etwa 30 Sekunden: Studium, fachliche Schwerpunkte und aktuelle Praxis. Es geht nur um eine kurze Vorstellung.</p>
+          <p>Danach direkt zur technischen Idee überleiten.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Das Problem">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">02</p>
+            <h2>Das Problem</h2>
+          </div>
+          <span class="slide-number">03 / 14</span>
+        </header>
+        <div class="slide-body problem-layout">
+          <div class="definition">
+            <p><strong>Ein Dynamikmodell</strong> soll aus dem aktuellen Flugzustand und den Motorbefehlen abschätzen, wie sich die Drohne weiterbewegt.</p>
+            <p>Bei längeren Vorhersagen werden frühere Schätzungen weiterverwendet. Kleine Fehler können dadurch mit jedem Schritt wachsen.</p>
+            <p class="not-video">Das Modell arbeitet mit Zustandsdaten wie Position, Geschwindigkeit und Ausrichtung – nicht mit Kamerabildern.</p>
+          </div>
+          <figure class="video-column mppi-column">
+            <video autoplay muted loop playsinline preload="auto" aria-label="Visualisierung möglicher Steuerungsverläufe">
+              <source src="assets/mppi-rollouts.mp4" type="video/mp4">
+            </video>
+            <figcaption class="video-label"><strong>Viele mögliche Verläufe</strong><br><span class="muted">Die Steuerung bewertet fortlaufend verschiedene nächste Aktionen.</span></figcaption>
+          </figure>
+        </div>
+        <footer class="slide-footer">
+          <span></span>
+          <a class="source-link" href="https://pratyaksh10.github.io/skyjepa-project-page/" target="_blank" rel="noreferrer">Visualisierung der offiziellen Projektseite</a>
+        </footer>
+        <aside class="speaker-note">
+          <p>Eine einfache Analogie ist die Wettervorhersage: Der nächste Moment ist relativ leicht vorherzusagen. Je weiter man nach vorn blickt, desto stärker wirken sich kleine frühe Fehler aus.</p>
+          <p>Die Animation zeigt den späteren Einsatz: Der Regler berechnet viele mögliche Verläufe, bewertet sie und führt nur den nächsten passenden Schritt aus.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Überblick über SkyJEPA">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">03</p>
+            <h2>Funktionsweise</h2>
+          </div>
+          <span class="slide-number">04 / 14</span>
+        </header>
+        <div class="slide-body paper-layout">
+          <div class="paper-facts">
+            <div class="paper-fact"><b>1 · Simulieren</b>Viele Flüge unter unterschiedlichen Bedingungen erzeugen</div>
+            <div class="paper-fact"><b>2 · Lernen</b>Die Folgen möglicher Motorbefehle vorhersagen</div>
+            <div class="paper-fact"><b>3 · Physik nutzen</b>Die Vorhersage mit bekannten Bewegungsregeln verbinden</div>
+            <div class="paper-fact"><b>4 · Steuern</b>Optionen vergleichen und den nächsten Schritt wählen</div>
+          </div>
+          <figure class="overview-frame">
+            <img src="assets/skyjepa-overview.png" alt="Ablauf von SkyJEPA: Simulationsdaten, gelerntes Dynamikmodell, Physik-Komponente und Übertragung auf die reale Drohne.">
+          </figure>
+        </div>
+        <footer class="slide-footer">
+          <span>Vier Schritte von den Trainingsdaten bis zur Steuerung</span>
+          <a class="source-link" href="https://pratyaksh10.github.io/skyjepa-project-page/" target="_blank" rel="noreferrer">Offizielle Projektseite</a>
+        </footer>
+        <aside class="speaker-note">
+          <p>Im Hauptvortrag zählt der Ablauf. Die Begriffe JEPA, Physics-Inspired Prober und MPPI nur nennen, wenn jemand nach der konkreten Architektur fragt.</p>
+          <p><strong>JEPA:</strong> Das Modell sagt eine kompakte interne Beschreibung der Zukunft voraus. <strong>Physik-Komponente:</strong> Bekannte Bewegungsregeln übersetzen diese Beschreibung in Position und Geschwindigkeit.</p>
+          <p><strong>MPPI:</strong> Die Steuerung prüft viele mögliche Befehlsfolgen, führt nur den besten nächsten Schritt aus und plant danach erneut.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Ergebnisse des Papers">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">04</p>
+            <h2>Ergebnisse des Papers</h2>
+          </div>
+          <span class="slide-number">05 / 14</span>
+        </header>
+        <div class="slide-body evidence-layout">
+          <div class="evidence-stats">
+            <div class="big-stat"><strong>≈9.000</strong><span>Parameter – ein ungewöhnlich kompaktes Modell für die Flugvorhersage</span></div>
+            <div class="big-stat"><strong>&lt;10 ms</strong><span>Rechenzeit pro Planungsschritt auf dem Bordcomputer</span></div>
+            <div class="big-stat"><strong>26–38 %</strong><span>weniger Positionsfehler als beim direkten Vergleichsmodell</span></div>
+            <p class="evidence-caveat"><strong>Noch offen:</strong> Das Paper wird begutachtet; der angekündigte Code für Training, Auswertung und Einsatz ist noch nicht öffentlich.</p>
+          </div>
+          <figure class="video-column">
+            <video autoplay muted loop playsinline preload="auto" aria-label="Offizielles SkyJEPA-Video eines realen Flugversuchs">
+              <source src="assets/drone-flight.mp4" type="video/mp4">
+            </video>
+            <figcaption class="video-label"><strong>Realer Flugversuch der Autoren</strong><br><span class="muted">1,3-kg-Quadrotor · Berechnung direkt auf der Drohne</span></figcaption>
+          </figure>
+        </div>
+        <footer class="slide-footer">
+          <span>Fünf Wiederholungen je Flugbahn; berichteter Positionsfehler: 0,24–0,45 m (RMSE)</span>
+          <span><a class="source-link" href="https://arxiv.org/abs/2606.23444" target="_blank" rel="noreferrer">Paper, Tabellen IV–V</a> · <a class="source-link" href="https://github.com/arplaboratory/SkyJEPA" target="_blank" rel="noreferrer">Stand des Repositorys</a></span>
+        </footer>
+        <aside class="speaker-note">
+          <p>Wichtig: Das sind Ergebnisse der Autoren, nicht deine eigenen. „Zero-shot Sim-to-Real“ bedeutet hier, dass das Modell in Simulation trainiert und anschließend ohne zusätzliches Training auf der echten Drohne eingesetzt wurde.</p>
+          <p>Der aktuelle Machbarkeitspunkt: Quellcode, trainierte Modelle und vollständige Reproduktionsanleitungen sind angekündigt, aber noch nicht öffentlich. Deshalb wäre die Arbeit zunächst eine unabhängige Reimplementierung und kein einfaches Wiederholen vorhandenen Codes.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Ziel der Reimplementierung">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">05</p>
+            <h2>Ziel der Reimplementierung</h2>
+          </div>
+          <span class="slide-number">06 / 14</span>
+        </header>
+        <div class="slide-body rq-layout">
+          <div class="rq-list">
+            <div class="rq">Die veröffentlichte Methode nachvollziehen</div>
+            <div class="rq">Die zentralen Komponenten nachimplementieren</div>
+            <div class="rq">Ergebnisse anhand ausgewählter Paper-Metriken einordnen</div>
+            <div class="rq">Steuerung testen, soweit Daten, Zeit und Umgebung es erlauben</div>
+          </div>
+          <aside class="deliverable">
+            <h3>Aktueller Rahmen</h3>
+            <p><strong>Reimplementierung von SkyJEPA.</strong></p>
+            <p class="out-of-scope">Datenbasis und Simulationsumgebung sind noch zu klären.</p>
+          </aside>
+        </div>
+        <footer class="slide-footer">
+          <span>Noch keine finale Forschungsfrage oder feste Umfangszusage</span>
+          <span>Aktueller Vorschlag</span>
+        </footer>
+        <aside class="speaker-note">
+          <p>Diese Punkte sind noch keine Forschungsfragen, sondern eine Beschreibung dessen, was die Arbeit grundsätzlich enthalten könnte.</p>
+          <p>Ohne Datensatz oder geeignete Simulationsumgebung lässt sich das Modell zwar implementieren, aber nicht sinnvoll trainieren und bewerten.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Möglicher Umfang der Bachelorarbeit">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">06</p>
+            <h2>Möglicher Umfang</h2>
+          </div>
+          <span class="slide-number">07 / 14</span>
+        </header>
+        <div class="slide-body scope-layout">
+          <div class="scope-columns">
+            <section class="scope-column">
+              <small>Reimplementierung</small>
+              <h3>Verstehen &amp; umsetzen</h3>
+              <ul>
+                <li>Methode und Datenfluss nachvollziehen</li>
+                <li>Zentrale Modellkomponenten implementieren</li>
+                <li>Ausgewählte Paper-Metriken berechnen</li>
+                <li>Annahmen und Abweichungen dokumentieren</li>
+              </ul>
+            </section>
+            <section class="scope-column should">
+              <small>Wenn es im Rahmen möglich ist</small>
+              <h3>Steuern &amp; testen</h3>
+              <ul>
+                <li>Steuerung in einer geeigneten Umgebung integrieren</li>
+                <li>Ausgewählte Flugbahnen testen</li>
+                <li>Laufzeit und Modellgröße betrachten</li>
+                <li>Verhalten bei veränderten Bedingungen untersuchen</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+        <footer class="slide-footer">
+          <span>Der genaue Umfang wird noch abgestimmt</span>
+          <span>Diskussionsgrundlage</span>
+        </footer>
+        <aside class="speaker-note">
+          <p>Die linke Spalte beschreibt die eigentliche Reimplementierung. Die rechte Spalte ist eine mögliche Erweiterung und keine feste Zusage.</p>
+          <p>Ein Einsatz auf echter Hardware wird auf dieser Folie bewusst nicht versprochen.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Mögliches Vorgehen">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">07</p>
+            <h2>Mögliches Vorgehen</h2>
+          </div>
+          <span class="slide-number">08 / 14</span>
+        </header>
+        <div class="slide-body plan-layout">
+          <div class="phases">
+            <div class="phase"><strong>Methode verstehen</strong><span>Architektur, Datenfluss und Paper-Metriken nachvollziehen</span></div>
+            <div class="phase"><strong>Datenzugang klären</strong><span>Datensatz, bestehende Simulation oder eigene Datenerzeugung</span></div>
+            <div class="phase"><strong>Komponenten umsetzen</strong><span>Modell und Physik-Komponente nachimplementieren</span></div>
+            <div class="phase"><strong>Ergebnisse einordnen</strong><span>Ausgewählte Metriken aus dem Paper verwenden</span></div>
+            <div class="phase"><strong>Steuerung testen</strong><span>Nur soweit Umgebung, Zeit und Daten es erlauben</span></div>
+          </div>
+          <aside class="success-block">
+            <h3>Noch zu klären</h3>
+            <ul>
+              <li>Welche Daten sind verfügbar?</li>
+              <li>Welche Simulationsumgebung ist geeignet?</li>
+              <li>Welche Paper-Metriken sind relevant?</li>
+              <li>Ist ein eigenes Vergleichsmodell nötig?</li>
+              <li>Welcher Umfang passt zur Bachelorarbeit?</li>
+            </ul>
+          </aside>
+        </div>
+        <footer class="slide-footer">
+          <span>Entwurf zur Diskussion – noch keine finale Festlegung</span>
+          <span>Vorgehensvorschlag</span>
+        </footer>
+        <aside class="speaker-note">
+          <p>Diese Reihenfolge ist bewusst als Vorschlag formuliert. Sie soll im Gespräch zeigen, welche Entscheidungen vor Beginn der Arbeit notwendig sind.</p>
+          <p>Insbesondere der Umfang der Evaluation und die Frage nach einem Vergleichsmodell müssen mit dem Professor abgestimmt werden.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Möglicher Bezug zu BMW">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">08</p>
+            <h2>Bezug zu BMW</h2>
+          </div>
+          <span class="slide-number">09 / 14</span>
+        </header>
+        <div class="slide-body support-layout">
+          <section>
+            <h3 class="mint">Mögliche Anknüpfungspunkte</h3>
+            <div class="value-list">
+              <div class="value-item"><b>01</b><span>Robotische Systeme zuerst sicher in Simulation testen</span></div>
+              <div class="value-item"><b>02</b><span>Kompakte KI direkt auf einem System ausführen</span></div>
+              <div class="value-item"><b>03</b><span>Robustheit bei veränderter Last, Hardware oder Umgebung</span></div>
+              <div class="value-item"><b>04</b><span>Lernbasierte Komponenten nachvollziehbar bewerten</span></div>
+            </div>
+          </section>
+          <section>
+            <h3 class="blue">Was ich gemeinsam einordnen möchte</h3>
+            <div class="support-list">
+              <div class="support-item"><b>01</b><span>Gibt es einen passenden BMW-Anwendungsbezug?</span></div>
+              <div class="support-item"><b>02</b><span>Welche fachliche Begleitung und Ressourcen sind realistisch?</span></div>
+              <div class="support-item"><b>03</b><span>Welche Regeln gelten für geistiges Eigentum, Veröffentlichung und Software?</span></div>
+            </div>
+          </section>
+        </div>
+        <footer class="slide-footer">
+          <span></span>
+          <span>Diskussionsgrundlage</span>
+        </footer>
+        <aside class="speaker-note">
+          <p>Keinen künstlichen Automotive-Anwendungsfall konstruieren. Die Themen Simulation-to-Real, kompakte Modelle und Robustheit könnten übertragbar sein; das Gespräch soll zeigen, ob es dafür einen echten BMW-Bezug gibt.</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Offene Fragen für das Gespräch">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">09</p>
+            <h2>Offene Fragen</h2>
+          </div>
+          <span class="slide-number">10 / 14</span>
+        </header>
+        <div class="slide-body decisions-layout">
+          <div class="decision-grid">
+            <article class="decision"><span class="num">01</span><div><h3>Welches Ergebnis wäre besonders interessant?</h3><p>Reimplementierung, Demonstrator oder eine andere Form?</p></div></article>
+            <article class="decision"><span class="num">02</span><div><h3>Welcher Umfang ist realistisch?</h3><p>Modell, Auswertung und gegebenenfalls Steuerung?</p></div></article>
+            <article class="decision"><span class="num">03</span><div><h3>Welche Daten und Umgebungen sind verfügbar?</h3><p>Datensatz, Simulator, Rechenleistung und fachlicher Kontakt?</p></div></article>
+            <article class="decision"><span class="num">04</span><div><h3>Welche Rahmenbedingungen gelten?</h3><p>Zeit, geistiges Eigentum, Vertraulichkeit, Veröffentlichung und Sicherheit?</p></div></article>
+          </div>
+          <div class="recommendation">
+            <strong>Aktueller Vorschlag: Reimplementierung von SkyJEPA.</strong>
+            <span>Datenbasis und Simulationsumgebung sind noch zu klären.</span>
+          </div>
+        </div>
+        <footer class="slide-footer">
+          <span>Ziel des Gesprächs: Richtung, Rahmen, Ansprechpartner und nächster technischer Termin</span>
+          <span>Kontaktfolie und Anhang folgen</span>
+        </footer>
+        <aside class="speaker-note">
+          <p>Nach jeder Frage kurz pausieren und die Antwort notieren. Besonders wichtig sind Datenzugang, Simulationsumgebung und der realistische Umfang.</p>
+          <p><strong>Abschluss:</strong> „Für mich wäre heute vor allem hilfreich zu verstehen, welcher Umfang realistisch ist und mit welchen Ressourcen ich planen kann.“</p>
+        </aside>
+      </section>
+
+      <section class="slide" aria-label="Kontakt und QR-Codes">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">10</p>
+            <h2>Kontakt</h2>
+          </div>
+          <span class="slide-number">11 / 14</span>
+        </header>
+        <div class="slide-body contact-layout">
+          <section class="contact-item">
+            <img class="qr-image" src="assets/linkedin-qr.png" alt="QR-Code zum LinkedIn-Profil von Inoussa Adouba">
+            <div class="contact-copy"><h3>LinkedIn</h3><p>Profil öffnen</p></div>
+          </section>
+          <section class="contact-item">
+            <img class="qr-image" src="assets/portfolio-qr.png" alt="QR-Code zur persönlichen Website von Inoussa Adouba">
+            <div class="contact-copy"><h3>Personal Website</h3><p>yun1us.github.io</p></div>
+          </section>
+        </div>
+        <footer class="slide-footer">
+          <span><strong>Inoussa Adouba</strong></span>
+          <span>LinkedIn · yun1us.github.io</span>
+        </footer>
+        <aside class="speaker-note"><p>Beide QR-Codes sind eingefügt und führen zu LinkedIn beziehungsweise zur persönlichen Website.</p></aside>
+      </section>
+
+      <section class="slide" aria-label="Anhang mit Begriffserklärungen">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">Anhang A</p>
+            <h2>Begriffe</h2>
+          </div>
+          <span class="appendix-label">Anhang</span>
+        </header>
+        <div class="slide-body glossary-grid">
+          <article class="term"><h3>Weltmodell</h3><p>Ein Modell, das anhand von Zustandsdaten und Aktionen vorhersagt, wie sich ein System weiterentwickelt.</p></article>
+          <article class="term"><h3>JEPA</h3><p>Das Modell rekonstruiert nicht jedes Detail der Zukunft, sondern sagt eine kompakte interne Beschreibung der zukünftigen Entwicklung voraus.</p></article>
+          <article class="term"><h3>MPPI</h3><p>Die Steuerung prüft viele mögliche Befehlsfolgen, führt den besten nächsten Schritt aus und plant danach erneut.</p></article>
+          <article class="term"><h3>Zero-shot Sim-to-Real</h3><p>Das Modell wird in Simulation trainiert und ohne weiteres Training auf der realen Plattform eingesetzt. „Zero-shot“ bedeutet nicht „ohne Training“.</p></article>
+        </div>
+        <footer class="slide-footer">
+          <span>Diese Folie nur bei Rückfragen zu den Begriffen zeigen</span>
+          <a class="source-link" href="https://arxiv.org/abs/2606.23444" target="_blank" rel="noreferrer">Definitionen nach SkyJEPA v2</a>
+        </footer>
+        <aside class="speaker-note"><p>Diese Folie nur bei Rückfragen zeigen. Das Modell verwendet Zustandsdaten wie Position, Geschwindigkeit und Ausrichtung.</p></aside>
+      </section>
+
+      <section class="slide" aria-label="Technischer Überblick im Anhang">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">Anhang B</p>
+            <h2>Technischer Überblick</h2>
+          </div>
+          <span class="appendix-label">Anhang</span>
+        </header>
+        <div class="slide-body spec-layout">
+          <section class="spec-group">
+            <h3>Daten und Training</h3>
+            <div class="spec-table">
+              <div class="spec-row"><span>Simulierte Drohnenvarianten</span><span>500</span></div>
+              <div class="spec-row"><span>Flugsequenzen</span><span>20.000 × 10 s</span></div>
+              <div class="spec-row"><span>Abtastrate</span><span>20 Hz</span></div>
+              <div class="spec-row"><span>Vergangenheit / Vorhersage</span><span>0,5 s / 1,0 s</span></div>
+              <div class="spec-row"><span>Internes Modell</span><span>1-layer GRU, Dim. 24</span></div>
+              <div class="spec-row"><span>Training</span><span>50 Epochen, Batch 2.048</span></div>
+            </div>
+          </section>
+          <section class="spec-group">
+            <h3>Steuerung und Hardware</h3>
+            <div class="spec-table">
+              <div class="spec-row"><span>Planungshorizont / Optionen</span><span>15 / 512</span></div>
+              <div class="spec-row"><span>Modellgröße</span><span>≈9.000 Parameter</span></div>
+              <div class="spec-row"><span>Bordcomputer</span><span>NVIDIA Orin NX</span></div>
+              <div class="spec-row"><span>Flugcontroller</span><span>Pixracer Pro + PX4</span></div>
+              <div class="spec-row"><span>Plattform</span><span>1,3 kg, Schub/Gewicht 4:1</span></div>
+              <div class="spec-row"><span>Kommunikation / Zustand</span><span>ROS2 / GPS-basiert</span></div>
+            </div>
+          </section>
+        </div>
+        <footer class="slide-footer">
+          <span>Konfiguration des Papers – noch keine Festlegung für die Bachelorarbeit</span>
+          <a class="source-link" href="https://arxiv.org/abs/2606.23444" target="_blank" rel="noreferrer">SkyJEPA v2, Abschnitte V–VI</a>
+        </footer>
+        <aside class="speaker-note"><p>Das neuronale Netz selbst ist klein. Anspruchsvoll ist die gesamte Kette aus Datenerzeugung, physikalischer Übersetzung, Auswertung und Steuerung.</p></aside>
+      </section>
+
+      <section class="slide" aria-label="Berichtete Ergebnisse im Anhang">
+        <header class="slide-header">
+          <div>
+            <p class="eyebrow">Anhang C</p>
+            <h2>Was das Paper berichtet</h2>
+          </div>
+          <span class="appendix-label">Anhang</span>
+        </header>
+        <div class="slide-body">
+          <table class="evidence-table">
+            <thead><tr><th>Aussage</th><th>Berichtetes Ergebnis</th></tr></thead>
+            <tbody>
+              <tr><td>Langzeitvorhersage</td><td>Der Fehler wächst laut Paper langsamer als bei direkten Vorhersagemodellen.</td></tr>
+              <tr><td>Physik-Komponente</td><td>Die Kombination mit bekannten Bewegungsregeln verringert Positions- und Orientierungsfehler.</td></tr>
+              <tr><td>Echtzeit</td><td>Das kompakte Modell wird auf einem NVIDIA Orin NX innerhalb des angegebenen Regelungsbudgets eingesetzt.</td></tr>
+              <tr><td>Reale Flugtests</td><td>Die Autoren zeigen Flugbahnen sowie Versuche mit Zusatzgewicht und anderen Propellern.</td></tr>
+              <tr><td>Öffentliche Ressourcen</td><td>Paper und Medien sind verfügbar; Code, Modelle und Datenanleitung sind weiterhin angekündigt.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <footer class="slide-footer">
+          <span>Status: arXiv v2, im Review, überarbeitet am 23. Juni 2026</span>
+          <span><a class="source-link" href="https://arxiv.org/abs/2606.23444" target="_blank" rel="noreferrer">Paper</a> · <a class="source-link" href="https://github.com/arplaboratory/SkyJEPA" target="_blank" rel="noreferrer">Repository</a> · <a class="source-link" href="https://pratyaksh10.github.io/skyjepa-project-page/" target="_blank" rel="noreferrer">Projektseite</a></span>
+        </footer>
+        <aside class="speaker-note"><p>Diese Folie fasst ausschließlich Ergebnisse und den aktuellen Ressourcenstand des Papers zusammen. Sie enthält keine Verpflichtungen für die eigene Arbeit.</p></aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="shortcut-hint">← → navigieren · N Notizen · F Vollbild · Home / End</div>
+
+  <nav class="controls" aria-label="Präsentationssteuerung">
+    <button class="control-button" id="prevButton" type="button" aria-label="Vorherige Folie">←</button>
+    <span class="counter" id="counter">1 / 14</span>
+    <button class="control-button" id="nextButton" type="button" aria-label="Nächste Folie">→</button>
+    <button class="control-button" id="notesButton" type="button" aria-label="Sprechernotizen ein- oder ausblenden" aria-pressed="false">N</button>
+    <button class="control-button" id="fullscreenButton" type="button" aria-label="Vollbild ein- oder ausschalten">⛶</button>
+  </nav>
+
+  <aside class="notes-panel" id="notesPanel" aria-label="Sprechernotizen">
+    <h2>Sprechernotizen</h2>
+    <div class="notes-content" id="notesContent"></div>
+  </aside>
+
+  <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counter = document.getElementById('counter');
+    const progressBar = document.getElementById('progressBar');
+    const notesContent = document.getElementById('notesContent');
+    const notesButton = document.getElementById('notesButton');
+    let current = Math.max(0, Math.min(slides.length - 1, (Number(location.hash.slice(1)) || 1) - 1));
+    let touchStartX = null;
+    if (current > 0) document.body.classList.add('has-moved');
+
+    function render() {
+      slides.forEach((slide, index) => {
+        const active = index === current;
+        slide.classList.toggle('active', active);
+        slide.setAttribute('aria-hidden', String(!active));
+        slide.querySelectorAll('video').forEach(video => {
+          if (active) video.play().catch(() => {});
+          else video.pause();
+        });
+      });
+
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      progressBar.style.width = `${((current + 1) / slides.length) * 100}%`;
+      const note = slides[current].querySelector('.speaker-note');
+      notesContent.innerHTML = note ? note.innerHTML : '<p>Keine Notizen für diese Folie.</p>';
+      document.title = `${current + 1}/${slides.length} · SkyJEPA – Bachelorarbeitsidee`;
+      try { history.replaceState(null, '', `#${current + 1}`); } catch (_) {}
+    }
+
+    function goTo(index) {
+      const next = Math.max(0, Math.min(slides.length - 1, index));
+      if (next === current) return;
+      current = next;
+      document.body.classList.add('has-moved');
+      render();
+    }
+
+    function toggleNotes() {
+      const open = document.body.classList.toggle('notes-open');
+      notesButton.setAttribute('aria-pressed', String(open));
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    }
+
+    document.getElementById('prevButton').addEventListener('click', () => goTo(current - 1));
+    document.getElementById('nextButton').addEventListener('click', () => goTo(current + 1));
+    notesButton.addEventListener('click', toggleNotes);
+    document.getElementById('fullscreenButton').addEventListener('click', toggleFullscreen);
+
+    document.addEventListener('keydown', event => {
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
+      if (['ArrowRight', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); goTo(current + 1); }
+      if (['ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); goTo(current - 1); }
+      if (event.key === 'Home') { event.preventDefault(); goTo(0); }
+      if (event.key === 'End') { event.preventDefault(); goTo(slides.length - 1); }
+      if (event.key.toLowerCase() === 'n') toggleNotes();
+      if (event.key.toLowerCase() === 'f') toggleFullscreen();
+      if (event.key === 'Escape') document.body.classList.remove('notes-open');
+    });
+
+    document.addEventListener('touchstart', event => { touchStartX = event.changedTouches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', event => {
+      if (touchStartX === null) return;
+      const distance = event.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(distance) > 50) goTo(current + (distance < 0 ? 1 : -1));
+      touchStartX = null;
+    }, { passive: true });
+
+    render();
+  </script>
+</body>
+</html>
